@@ -1,0 +1,55 @@
+# ===== Node =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== Hardhat =====
+artifacts/
+cache/
+coverage/
+coverage.json
+typechain-types/
+
+# ===== Variables d'environnement =====
+.env
+.env.*
+!.env.example
+
+# ===== Python =====
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ===== Modèles IA (volumineux, à régénérer) =====
+ai/models/*.joblib
+ai/models/*.pkl
+ai/data/*.csv
+ai/data/*.parquet
+
+# ===== React (dashboard) =====
+dashboard/node_modules/
+dashboard/build/
+dashboard/dist/
+dashboard/.env.local
+
+# ===== Gateway =====
+gateway/node_modules/
+gateway/dist/
+
+# ===== Système =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== Logs =====
+*.log
+logs/
