@@ -8,11 +8,11 @@ et Technologies, Université de Kinshasa).
 
 | Nom | Rôle | Contact |
 |---|---|---|
-| _à compléter_ | Chef de projet | _à compléter_ |
-| _à compléter_ | Développeur contrats | _à compléter_ |
-| _à compléter_ | Développeur passerelle / IoT | _à compléter_ |
-| _à compléter_ | Data / IA | _à compléter_ |
-| _à compléter_ | Frontend / DApp | _à compléter_ |
+| MUTOMBO KABI Sylvano| Chef de projet | _à compléter_ |
+| MBELU LYDIA | Développeur contrats | _à compléter_ |
+| _KATOLO NSHIMBI Jeremie | Développeur passerelle / IoT | _à compléter_ |
+| _TOUS | Data / IA | _à compléter_ |
+| _KALONJI MPOYI Bienvenu | Frontend / DApp | _à compléter_ |
 
 ## Objectif
 
