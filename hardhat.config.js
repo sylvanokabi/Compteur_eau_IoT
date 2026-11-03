@@ -1,9 +1,9 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-const AMOY_RPC_URL = process.env.AMOY_RPC_URL || "";
+const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
-const OKLINK_API_KEY = process.env.OKLINK_API_KEY || "";
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -20,30 +20,23 @@ module.exports = {
     hardhat: {
       chainId: 31337,
     },
-    amoy: {
-      url: AMOY_RPC_URL,
+    sepolia: {
+      url: SEPOLIA_RPC_URL,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
-      chainId: 80002,
+      chainId: 11155111, // Chain ID de Sepolia
     },
   },
   etherscan: {
-    apiKey: {
-      polygonAmoy: OKLINK_API_KEY,
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY,
     customChains: [
       {
-        network: "polygonAmoy",
-        chainId: 80002,
+        network: "sepolia",
+        chainId: 11155111,
         urls: {
-          apiURL:
-            "https://www.oklink.com/api/v5/explorer/contract/verify-source-code-plugin/AMOY_TESTNET",
-          browserURL: "https://amoy.polygonscan.com",
+          apiURL: "https://api.etherscan.io/v2/api",
+          browserURL: "https://sepolia.etherscan.io",
         },
       },
     ],
-  },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS === "true",
-    currency: "USD",
   },
 };

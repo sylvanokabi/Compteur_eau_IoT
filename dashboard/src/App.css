@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f0f4f8;
+  color: #333;
+}
+
+.dashboard {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 2px solid #e1e8ed;
+  margin-bottom: 30px;
+}
+
+h1 {
+  color: #1e3a8a;
+}
+
+.btn-connect, .btn-topup {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.btn-connect:hover, .btn-topup:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-topup:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.account-info {
+  background: #e0e7ff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #3730a3;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin-bottom: 10px;
+  color: #1f2937;
+}
+
+.meter-address, .subtitle {
+  color: #6b7280;
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stat-box {
+  background: #f3f4f6;
+  padding: 15px;
+  border-radius: 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  font-size: 0.8em;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.value {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.status-active { color: #059669; }
+.status-suspended { color: #dc2626; }
+
+.btn-topup {
+  width: 100%;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-alerts {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.alert-item {
+  background: #fef2f2;
+  border-left: 4px solid #ef4444;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.alert-title {
+  font-weight: bold;
+  color: #991b1b;
+}
+
+.alert-time {
+  font-size: 0.8em;
+  color: #7f1d1d;
+}
+
+.alert-meter {
+  font-size: 0.8em;
+  color: #6b7280;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
