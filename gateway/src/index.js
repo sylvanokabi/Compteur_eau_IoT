@@ -46,7 +46,8 @@ async function processQueue() {
     const meterAddress = ethers.getAddress(payload.meterAddress);
 
     console.log(`🧠 Analyse de l'IA en cours...`);
-    const aiResponse = await fetch("http://127.0.0.1:5000/predict", {
+    const aiUrl = process.env.AI_API_URL || "http://127.0.0.1:5000";
+    const aiResponse = await fetch(`${aiUrl}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ volume: payload.volume })
