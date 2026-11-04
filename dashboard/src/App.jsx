@@ -12,12 +12,15 @@ const contractABI = [
 const CONTRACT_ADDRESS = "0x4016478B4Dd33f54622024B9E66E0A72C871e569"; 
 const METER_ADDRESS = "0x3d5e768eda8669ce6c5e41435a1535ce690e2efd";
 
+// Gestion de l'URL de l'API (Render ou local)
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:3001';
+
 function App() {
   const [account, setAccount] = useState(null);
   const [balance, setBalance] = useState("0");
   const [isActive, setIsActive] = useState(false);
   const [alerts, setAlerts] = useState([]);
-  const [readings, setReadings] = useState([]); // Nouvel état pour le graphique
+  const [readings, setReadings] = useState([]); 
   const [isLoading, setIsLoading] = useState(false);
 
   const connectWallet = async () => {
@@ -73,19 +76,24 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const alertsRes = await fetch('http://localhost:3001/api/alerts');
-        const alertsData = await alertsRes.json();
-        setAlerts(alertsData);
+        // Utilisation de GATEWAY_URL
+        const alertsRes = await fetch(`${GATEWAY_URL}/api/alerts`);
+        if (alertsRes.ok) {
+          const alertsData = await alertsRes.json();
+          setAlerts(alertsData);
+        }
 
-        const readingsRes = await fetch('http://localhost:3001/api/readings');
-        const readingsData = await readingsRes.json();
-        setReadings(readingsData);
+        const readingsRes = await fetch(`${GATEWAY_URL}/api/readings`);
+        if (readingsRes.ok) {
+          const readingsData = await readingsRes.json();
+          setReadings(readingsData);
+        }
       } catch (error) {
-        // Silencieux si la passerelle n'est pas allumée
+        // Silencieux si la passerelle est en train de démarrer (Render free tier)
       }
     };
 
-    const interval = setInterval(fetchData, 3000); // Rafraîchir toutes les 3 secondes
+    const interval = setInterval(fetchData, 3000); 
     fetchData();
     return () => clearInterval(interval);
   }, []);
@@ -110,7 +118,6 @@ function App() {
       </header>
 
       <main>
-        {/* Section Abonné */}
         <section className="card">
           <h2>Espace Abonné</h2>
           <p className="meter-address">Compteur : {METER_ADDRESS.slice(0, 10)}...</p>
@@ -137,7 +144,6 @@ function App() {
           </button>
         </section>
 
-        {/* Section Graphique */}
         <section className="card">
           <h2>Surveillance des débits</h2>
           <p className="subtitle">Seuil d'alerte fixé à 30 m³</p>
@@ -152,7 +158,6 @@ function App() {
                   <XAxis dataKey="time" tick={{fontSize: 10}} />
                   <YAxis domain={[0, 50]} />
                   <Tooltip />
-                  {/* Ligne rouge pointillée pour le seuil */}
                   <ReferenceLine y={30} stroke="red" strokeDasharray="3 3" label={{ position: 'top', value: 'Seuil (30)', fill: 'red', fontSize: 12 }} />
                   <Bar dataKey="volume" name="Volume (m³)">
                     {readings.map((entry, index) => (
@@ -165,7 +170,6 @@ function App() {
           </div>
         </section>
 
-        {/* Section Opérateur (Alertes IA) */}
         <section className="card" style={{ gridColumn: "1 / -1" }}>
           <h2>Alertes de Fuites (IA)</h2>
           <p className="subtitle">Détection en temps réel (Isolation Forest)</p>

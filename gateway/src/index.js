@@ -9,7 +9,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL, undefined, { staticNetwork: true });
+// Configuration Blockchain
+const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const contractABI = [
@@ -20,6 +21,7 @@ const contractABI = [
 ];
 const waterContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, contractABI, wallet);
 
+// Configuration MQTT
 const mqttOptions = {
   host: process.env.MQTT_URL.split("://")[1].split(":")[0],
   port: 8883,
@@ -28,25 +30,42 @@ const mqttOptions = {
   password: process.env.MQTT_PASSWORD,
 };
 
+console.log("Connexion au broker MQTT HiveMQ...");
 const client = mqtt.connect(mqttOptions);
 
-let messageQueue = [];
-let isProcessingQueue = false;
-let recentAlerts = []; 
-let recentReadings = []; // NOUVEAU: Stocke l'historique pour le graphique
+let isProcessing = false; 
 
-async function processQueue() {
-  if (isProcessingQueue || messageQueue.length === 0) return;
-  isProcessingQueue = true;
+// Mémoire temporaire pour le Tableau de bord
+let readingsDB = [];
+let alertsDB = [];
 
-  const payload = messageQueue.shift();
+client.on("connect", () => {
+  console.log("✅ Connecté au broker MQTT");
+  const topic = `${process.env.MQTT_TOPIC_PREFIX}/+/reading`;
+  client.subscribe(topic, (err) => {
+    if (!err) console.log(`📡 En écoute sur le topic : ${topic}`);
+  });
+});
+
+client.on("message", async (topic, message) => {
+  if (isProcessing) return; 
+  isProcessing = true;
 
   try {
-    console.log(`\n📥 Traitement du relevé [${payload.meterAddress}] : ${payload.volume} m³`);
+    const payload = JSON.parse(message.toString());
+    console.log(`\n📥 Relevé reçu [${payload.meterAddress}] : ${payload.volume} m³`);
+
     const meterAddress = ethers.getAddress(payload.meterAddress);
 
+    // 1. Sauvegarde pour le graphique React
+    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    readingsDB.push({ time: timeString, volume: payload.volume });
+    if (readingsDB.length > 20) readingsDB.shift(); // Garde les 20 derniers
+
+    // --- 🧠 APPEL À L'INTELLIGENCE ARTIFICIELLE ---
     console.log(`🧠 Analyse de l'IA en cours...`);
     const aiUrl = process.env.AI_API_URL || "http://127.0.0.1:5000";
+    
     const aiResponse = await fetch(`${aiUrl}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -55,27 +74,22 @@ async function processQueue() {
     
     const aiData = await aiResponse.json();
     
-    // NOUVEAU: Ajouter le relevé à l'historique pour le graphique
-    recentReadings.push({
-      time: new Date().toLocaleTimeString(),
-      volume: payload.volume,
-      isLeak: aiData.is_anomaly
-    });
-    if (recentReadings.length > 15) recentReadings.shift(); // Garde les 15 derniers
-
     if (aiData.is_anomaly) {
-      console.log(`🚨 ALERTE IA : ${aiData.status} (Volume : ${payload.volume} m³)`);
-      recentAlerts.unshift({
-        meter: payload.meterAddress,
+      console.log(`🚨 ALERTE IA : ${aiData.status} (Volume : ${payload.volume} m³, Score: ${aiData.score.toFixed(3)})`);
+      
+      // 2. Sauvegarde de l'alerte pour React
+      alertsDB.unshift({
+        meter: meterAddress,
         volume: payload.volume,
-        score: aiData.score,
-        timestamp: new Date().toISOString()
+        timestamp: Date.now()
       });
-      if (recentAlerts.length > 10) recentAlerts.pop();
+      if (alertsDB.length > 10) alertsDB.pop(); // Garde les 10 dernières alertes
+      
     } else {
-      console.log(`✅ L'IA confirme que la consommation est normale.`);
+      console.log(`✅ L'IA confirme que la consommation est normale. (Score: ${aiData.score.toFixed(3)})`);
     }
 
+    // Vérifier le solde actuel
     const balance = await waterContract.creditBalance(meterAddress);
     const active = await waterContract.serviceActive(meterAddress);
 
@@ -92,43 +106,25 @@ async function processQueue() {
     console.log(`✅ Transaction confirmée ! Bloc: ${receipt.blockNumber}`);
 
   } catch (error) {
-    console.error("❌ Erreur lors du traitement :", error.reason || error.message);
+    console.error("❌ Erreur :", error.reason || error.message);
   } finally {
-    isProcessingQueue = false;
-    processQueue();
-  }
-}
-
-client.on("connect", () => {
-  console.log("✅ Connecté au broker MQTT");
-  const topic = `${process.env.MQTT_TOPIC_PREFIX}/+/reading`;
-  client.subscribe(topic, (err) => {
-    if (!err) console.log(`📡 En écoute sur le topic : ${topic}`);
-  });
-});
-
-client.on("message", (topic, message) => {
-  try {
-    const payload = JSON.parse(message.toString());
-    messageQueue.push(payload);
-    processQueue();
-  } catch (error) {
-    console.error("❌ Impossible de parser le message MQTT");
+    isProcessing = false; 
   }
 });
 
-// --- ROUTES API POUR LE TABLEAU DE BORD ---
+// ==========================================
+// ROUTES POUR LE TABLEAU DE BORD REACT
+// ==========================================
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", queueSize: messageQueue.length });
+  res.json({ status: "ok", message: "Passerelle opérationnelle" });
+});
+
+app.get("/api/readings", (req, res) => {
+  res.json(readingsDB);
 });
 
 app.get("/api/alerts", (req, res) => {
-  res.json(recentAlerts);
-});
-
-// NOUVELLE ROUTE: pour le graphique
-app.get("/api/readings", (req, res) => {
-  res.json(recentReadings);
+  res.json(alertsDB);
 });
 
 const PORT = process.env.GATEWAY_PORT || 3001;
