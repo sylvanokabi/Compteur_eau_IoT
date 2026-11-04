@@ -1,0 +1,63 @@
+{
+  "name": "water-credit-blockchain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Prototype blockchain - Compteurs d'eau intelligents et facturation prépayée",
+  "author": "Groupe M1 MSI - UNIKIN",
+  "license": "MIT",
+  "scripts": {
+    "start": "node gateway/src/index.js",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "coverage": "hardhat coverage",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "verify:sepolia": "hardhat run scripts/verify.js --network sepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.29.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "mqtt": "^5.16.1"
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

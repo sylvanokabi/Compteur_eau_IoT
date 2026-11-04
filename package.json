@@ -2,10 +2,11 @@
   "name": "water-credit-blockchain",
   "version": "0.1.0",
   "private": true,
-  "description": "Prototype blockchain - Compteurs d'eau intelligents et facturation prépayée (Polygon Amoy)",
+  "description": "Prototype blockchain - Compteurs d'eau intelligents et facturation prépayée",
   "author": "Groupe M1 MSI - UNIKIN",
   "license": "MIT",
   "scripts": {
+    "start": "node gateway/src/index.js",
     "compile": "hardhat compile",
     "test": "hardhat test",
     "coverage": "hardhat coverage",
@@ -26,3 +27,37 @@
     "mqtt": "^5.16.1"
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
