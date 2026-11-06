@@ -34,8 +34,6 @@ console.log("Connexion au broker MQTT HiveMQ...");
 const client = mqtt.connect(mqttOptions);
 
 let isProcessing = false; 
-
-// Mémoire temporaire pour le Tableau de bord
 let readingsDB = [];
 let alertsDB = [];
 
@@ -57,39 +55,64 @@ client.on("message", async (topic, message) => {
 
     const meterAddress = ethers.getAddress(payload.meterAddress);
 
-    // 1. Sauvegarde pour le graphique React
+    // 1. Sauvegarde IMMÉDIATE pour le graphique
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     readingsDB.push({ time: timeString, volume: payload.volume });
-    if (readingsDB.length > 20) readingsDB.shift(); // Garde les 20 derniers
+    if (readingsDB.length > 20) readingsDB.shift(); 
 
-    // --- 🧠 APPEL À L'INTELLIGENCE ARTIFICIELLE ---
+    // 2. Appel IA avec Timeout (Sécurité)
     console.log(`🧠 Analyse de l'IA en cours...`);
     const aiUrl = process.env.AI_API_URL || "http://127.0.0.1:5000";
-    
-    const aiResponse = await fetch(`${aiUrl}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ volume: payload.volume })
-    });
-    
-    const aiData = await aiResponse.json();
-    
-    if (aiData.is_anomaly) {
-      console.log(`🚨 ALERTE IA : ${aiData.status} (Volume : ${payload.volume} m³, Score: ${aiData.score.toFixed(3)})`);
+    let aiAnomaly = false;
+
+    try {
+      // On attend max 5 secondes pour éviter que le serveur ne bloque
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); 
+
+      const aiResponse = await fetch(`${aiUrl}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ volume: payload.volume }),
+        signal: controller.signal
+      });
       
-      // 2. Sauvegarde de l'alerte pour React
+      clearTimeout(timeoutId);
+
+      // On vérifie que la réponse est bien du JSON avant de la lire
+      const contentType = aiResponse.headers.get("content-type");
+      if (aiResponse.ok && contentType && contentType.includes("application/json")) {
+        const aiData = await aiResponse.json();
+        aiAnomaly = aiData.is_anomaly;
+        
+        if (aiAnomaly) {
+          console.log(`🚨 ALERTE IA : ${aiData.status} (Volume : ${payload.volume} m³)`);
+        } else {
+          console.log(`✅ L'IA confirme que la consommation est normale.`);
+        }
+      } else {
+        console.log(`⚠️ L'API IA a renvoyé du HTML (Réveil Render). Fallback activé.`);
+        // Si l'IA est en train de se réveiller, on utilise la règle métier de secours
+        if (payload.volume > 30) aiAnomaly = true; 
+      }
+    } catch (aiError) {
+      console.log(`⚠️ L'IA est injoignable ou endormie. Fallback activé.`);
+      // Si l'IA ne répond pas du tout, on déclenche l'alerte si le volume est anormal
+      if (payload.volume > 30) aiAnomaly = true; 
+    }
+
+    // 3. Enregistrement de l'alerte si fuite
+    if (aiAnomaly) {
       alertsDB.unshift({
         meter: meterAddress,
         volume: payload.volume,
         timestamp: Date.now()
       });
-      if (alertsDB.length > 10) alertsDB.pop(); // Garde les 10 dernières alertes
-      
-    } else {
-      console.log(`✅ L'IA confirme que la consommation est normale. (Score: ${aiData.score.toFixed(3)})`);
+      if (alertsDB.length > 10) alertsDB.pop();
+      console.log(`🚨 Alerte ajoutée à la liste (Taille actuelle: ${alertsDB.length})`);
     }
 
-    // Vérifier le solde actuel
+    // 4. Interactions Blockchain
     const balance = await waterContract.creditBalance(meterAddress);
     const active = await waterContract.serviceActive(meterAddress);
 
@@ -97,7 +120,6 @@ client.on("message", async (topic, message) => {
       console.log(`⚠️ Crédit insuffisant. Rechargement automatique de 100 m³...`);
       const topUpTx = await waterContract.topUp(meterAddress, 100); 
       await topUpTx.wait();
-      console.log(`✅ Compteur rechargé.`);
     }
 
     console.log(`⏳ Enregistrement du relevé sur la blockchain...`);
@@ -106,7 +128,7 @@ client.on("message", async (topic, message) => {
     console.log(`✅ Transaction confirmée ! Bloc: ${receipt.blockNumber}`);
 
   } catch (error) {
-    console.error("❌ Erreur :", error.reason || error.message);
+    console.error("❌ Erreur bloquante :", error.reason || error.message);
   } finally {
     isProcessing = false; 
   }
